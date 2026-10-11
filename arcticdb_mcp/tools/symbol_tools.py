@@ -60,12 +60,16 @@ def _infer_datetime_index(df: pd.DataFrame) -> pd.DataFrame:
         if candidate in col_lower:
             col = col_lower[candidate]
             converted = pd.to_datetime(df[col], errors="coerce")
-            if not converted.isna().any():
-                df = df.copy()
-                df.index = converted
-                df.index.name = col
-                df = df.drop(columns=[col])
-                return df.sort_index()
+            if converted.isna().any():
+                raise ValueError(
+                    f"Column '{col}' contains invalid datetime values. "
+                    "Use ISO 8601 strings, for example 2024-01-01T09:30:00Z."
+                )
+            df = df.copy()
+            df.index = converted
+            df.index.name = col
+            df = df.drop(columns=[col])
+            return df.sort_index()
     return df
 
 
