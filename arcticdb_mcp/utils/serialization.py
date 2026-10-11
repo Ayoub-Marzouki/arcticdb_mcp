@@ -56,11 +56,26 @@ def serialize_versioned_item(item: Any, include_data: bool = False) -> dict:
     return result
 
 
+def _normalize_error_code(error_code: Any) -> Any:
+    if error_code is None:
+        return None
+
+    # ArcticDB error codes are enum instances (e.g. ErrorCode.E_NO_SUCH_VERSION)
+    # that are not JSON-serializable; prefer the numeric value when available.
+    value = getattr(error_code, "value", None)
+    if value is not None:
+        return value
+    try:
+        return int(error_code)
+    except (TypeError, ValueError):
+        return str(error_code)
+
+
 def serialize_data_error(error: Any) -> dict:
     return {
         "error": True,
         "symbol": getattr(error, "symbol", None),
-        "error_code": getattr(error, "error_code", None),
+        "error_code": _normalize_error_code(getattr(error, "error_code", None)),
         "error_category": str(getattr(error, "error_category", None)),
         "exception_string": getattr(error, "exception_string", None),
         "version_request_type": str(getattr(error, "version_request_type", None)),
